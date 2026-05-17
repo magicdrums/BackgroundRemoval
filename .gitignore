@@ -1,0 +1,62 @@
+# --- Build / install ---
+build/
+release/
+install_manifest.txt
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+compile_commands.json
+
+# --- Artefactos compilados ---
+*.so
+*.so.*
+*.o
+*.a
+*.dylib
+*.dll
+*.exe
+*.out
+
+# --- Generado por CMake ---
+src/plugin-macros.generated.h
+
+# --- Modelo ONNX (descargar con scripts/download-model.sh) ---
+data/models/*.onnx
+!data/models/.gitkeep
+
+# --- Herramientas locales de depuración ---
+scripts/inspect-model
+/tmp/inspect-model
+
+# --- Cachés y perfiles ---
+.cache/
+.ccache/
+*.profdata
+
+# --- IDE / editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.cproject
+.settings/
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs y cores ---
+*.log
+core
+core.*
+vgcore.*
+
+# --- Misc ---
+_upstream/
+*.user
+*.orig
+*.rej
