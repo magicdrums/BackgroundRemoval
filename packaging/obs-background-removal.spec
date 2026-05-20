@@ -7,13 +7,12 @@ Summary:        OBS Studio plugin for AI portrait background removal
 
 License:        GPL-2.0-or-later
 URL:            https://github.com/vipereir/BackgroundRemoval
-VCS-Type:       git
-# VCS-URL is set by CI when building from a fork; adjust for your repository.
-VCS-URL:        https://github.com/vipereir/BackgroundRemoval
 
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.16
+BuildRequires:  cmake-rpm-macros
+BuildRequires:  ninja-build
 BuildRequires:  gcc-c++
 BuildRequires:  obs-studio-devel
 BuildRequires:  opencv-devel
