@@ -7,7 +7,7 @@ BUILD="$ROOT/build"
 
 echo "==> Comprobando dependencias..."
 missing=()
-for pkg in obs-studio-devel opencv-devel onnxruntime-devel cmake gcc-c++; do
+for pkg in obs-studio-devel opencv-devel onnxruntime-devel cmake gcc-c++ gtest-devel; do
   rpm -q "$pkg" &>/dev/null || missing+=("$pkg")
 done
 
@@ -24,10 +24,15 @@ echo "==> Configurando CMake..."
 cmake -S "$ROOT" -B "$BUILD" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/usr \
-  -DLINUX_PORTABLE=OFF
+  -DLINUX_PORTABLE=OFF \
+  -DBUILD_TESTING=ON
 
 echo "==> Compilando..."
 cmake --build "$BUILD" -j"$(nproc)"
+
+echo "==> Pruebas unitarias..."
+export OBS_BGREMOVAL_MODEL_PATH="$ROOT/data/models/mediapipe.onnx"
+ctest --test-dir "$BUILD" --output-on-failure
 
 echo "==> Instalando en el sistema (requiere sudo)..."
 sudo cmake --install "$BUILD"

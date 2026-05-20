@@ -2,6 +2,7 @@
 #define MODELMEDIAPIPE_H
 
 #include "Model.h"
+#include "core/mediapipe_shapes.h"
 
 class ModelMediaPipe : public Model {
 public:
@@ -10,8 +11,8 @@ public:
 				       std::vector<std::vector<int64_t>> &outputDims) override
 	{
 		UNUSED_PARAMETER(session);
-		inputDims = {{1, 144, 256, 3}};
-		outputDims = {{1, 144, 256, 2}};
+		inputDims = {mediapipeInputShape()};
+		outputDims = {mediapipeOutputShape()};
 		return true;
 	}
 

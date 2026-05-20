@@ -5,9 +5,12 @@
 
 #include "FilterData.h"
 #include "consts.h"
+#include "obs-utils/background-image.h"
 #include "obs-utils/obs-utils.h"
 #include "ort-utils/ort-session-utils.h"
 #include "plugin-macros.generated.h"
+
+enum BackgroundMode { BACKGROUND_TRANSPARENT = 0, BACKGROUND_IMAGE = 1 };
 
 struct background_removal_filter : public filter_data {
 	bool enableThreshold = true;
@@ -19,6 +22,9 @@ struct background_removal_filter : public filter_data {
 	cv::Mat backgroundMask;
 	int maskEveryXFrames = 1;
 	int maskEveryXFramesCount = 0;
+
+	int backgroundMode = BACKGROUND_TRANSPARENT;
+	BackgroundImageState backgroundImage;
 
 	gs_effect_t *effect = nullptr;
 };
@@ -39,9 +45,32 @@ static bool enable_threshold_modified(obs_properties_t *ppts, obs_property_t *,
 	return true;
 }
 
+static bool background_mode_modified(obs_properties_t *ppts, obs_property_t *,
+				     obs_data_t *settings)
+{
+	const int mode = (int)obs_data_get_int(settings, "background_mode");
+	obs_property_t *imagePath = obs_properties_get(ppts, "background_image");
+	obs_property_set_visible(imagePath, mode == BACKGROUND_IMAGE);
+	return true;
+}
+
 static obs_properties_t *filter_properties(void *)
 {
 	obs_properties_t *props = obs_properties_create();
+
+	obs_property_t *mode = obs_properties_add_list(props, "background_mode",
+						       obs_module_text("BackgroundMode"),
+						       OBS_COMBO_TYPE_LIST,
+						       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(mode, obs_module_text("BackgroundTransparent"),
+				BACKGROUND_TRANSPARENT);
+	obs_property_list_add_int(mode, obs_module_text("BackgroundImage"), BACKGROUND_IMAGE);
+	obs_property_set_modified_callback(mode, background_mode_modified);
+
+	obs_property_t *imagePath = obs_properties_add_path(
+		props, "background_image", obs_module_text("BackgroundImage"), OBS_PATH_FILE,
+		obs_module_text("ImageFiles"), "*.png *.jpg *.jpeg *.bmp *.webp *.tga");
+	obs_property_set_visible(imagePath, false);
 
 	obs_property_t *p = obs_properties_add_bool(props, "enable_threshold",
 						  obs_module_text("EnableThreshold"));
@@ -65,6 +94,8 @@ static obs_properties_t *filter_properties(void *)
 
 static void filter_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_int(settings, "background_mode", BACKGROUND_TRANSPARENT);
+	obs_data_set_default_string(settings, "background_image", "");
 	obs_data_set_default_bool(settings, "enable_threshold", true);
 	obs_data_set_default_double(settings, "threshold", 0.5);
 	obs_data_set_default_double(settings, "contour_filter", 0.05);
@@ -72,6 +103,27 @@ static void filter_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, "feather", 0.0);
 	obs_data_set_default_int(settings, "mask_every_x_frames", 1);
 	obs_data_set_default_int(settings, "numThreads", 2);
+}
+
+static void filter_update_background_image(background_removal_filter *tf, obs_data_t *settings)
+{
+	const int mode = (int)obs_data_get_int(settings, "background_mode");
+	const char *path = obs_data_get_string(settings, "background_image");
+
+	tf->backgroundMode = mode;
+	backgroundImageReleaseTexture(tf->backgroundImage);
+
+	if (mode != BACKGROUND_IMAGE) {
+		tf->backgroundImage.sourceBGRA.release();
+		tf->backgroundImage.imagePath.clear();
+		return;
+	}
+
+	if (tf->backgroundImage.imagePath == path && !tf->backgroundImage.sourceBGRA.empty()) {
+		return;
+	}
+
+	backgroundImageLoadFromFile(tf->backgroundImage, path);
 }
 
 static void filter_update(void *data, obs_data_t *settings)
@@ -85,6 +137,8 @@ static void filter_update(void *data, obs_data_t *settings)
 	tf->feather = (float)obs_data_get_double(settings, "feather");
 	tf->maskEveryXFrames = (int)obs_data_get_int(settings, "mask_every_x_frames");
 	tf->maskEveryXFramesCount = 0;
+
+	filter_update_background_image(tf, settings);
 
 	const uint32_t newNumThreads = (uint32_t)obs_data_get_int(settings, "numThreads");
 	if (tf->configuredNumThreads != newNumThreads) {
@@ -144,6 +198,8 @@ static void filter_destroy(void *data)
 	if (!tf) {
 		return;
 	}
+
+	backgroundImageReleaseTexture(tf->backgroundImage);
 
 	obs_enter_graphics();
 	gs_texrender_destroy(tf->texrender);
@@ -300,12 +356,21 @@ static void filter_video_render(void *data, gs_effect_t *)
 		}
 	}
 
+	const char *technique = "DrawWithoutBlur";
+	if (tf->backgroundMode == BACKGROUND_IMAGE &&
+	    backgroundImageEnsureTexture(tf->backgroundImage, width, height)) {
+		gs_eparam_t *backgroundParam =
+			gs_effect_get_param_by_name(tf->effect, "backgroundImage");
+		gs_effect_set_texture(backgroundParam, tf->backgroundImage.texture);
+		technique = "DrawWithBackground";
+	}
+
 	gs_eparam_t *alphamask = gs_effect_get_param_by_name(tf->effect, "alphamask");
 	gs_effect_set_texture(alphamask, alphaTexture);
 
 	gs_blend_state_push();
 	gs_reset_blend_state();
-	obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0, "DrawWithoutBlur");
+	obs_source_process_filter_tech_end(tf->source, tf->effect, 0, 0, technique);
 	gs_blend_state_pop();
 
 	gs_texture_destroy(alphaTexture);

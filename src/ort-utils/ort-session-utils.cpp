@@ -1,29 +1,10 @@
 #include "ort-session-utils.h"
 
 #include <obs-module.h>
-#include <util/platform.h>
-
-#include <fstream>
 
 #include "consts.h"
+#include "core/onnx_model_validate.h"
 #include "plugin-macros.generated.h"
-
-static bool modelFileLooksValid(const char *path)
-{
-	const int64_t size = os_get_file_size(path);
-	if (size < 100 * 1024) {
-		return false;
-	}
-
-	std::ifstream file(path, std::ios::binary);
-	if (!file) {
-		return false;
-	}
-
-	char magic[4] = {};
-	file.read(magic, sizeof(magic));
-	return file.gcount() == 4 && magic[0] == 0x08;
-}
 
 void createOrtSession(filter_data *tf)
 {
@@ -53,7 +34,7 @@ void createOrtSession(filter_data *tf)
 		return;
 	}
 
-	if (!modelFileLooksValid(modelPath)) {
+	if (!onnxModelFileLooksValid(modelPath)) {
 		blog(LOG_ERROR, "Model file is missing or invalid: %s", modelPath);
 		bfree(modelPath);
 		return;

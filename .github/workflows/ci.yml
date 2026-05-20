@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-test-rpm:
+    name: Fedora ${{ matrix.fedora }} — tests & RPM
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: [43]
+
+    container:
+      image: fedora:${{ matrix.fedora }}
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            git cmake ninja-build gcc-c++ \
+            obs-studio-devel opencv-devel onnxruntime-devel \
+            gtest-devel curl rpm-build rpmdevtools
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ONNX model
+        run: bash scripts/download-model.sh
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DLINUX_PORTABLE=OFF \
+            -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Unit tests
+        env:
+          OBS_BGREMOVAL_MODEL_PATH: ${{ github.workspace }}/data/models/mediapipe.onnx
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Build RPM
+        run: |
+          chmod +x scripts/build-rpm.sh
+          ./scripts/build-rpm.sh
+
+      - name: Collect RPM artifact
+        run: |
+          mkdir -p dist
+          cp -v "$HOME/rpmbuild/RPMS"/*/*.rpm dist/
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-background-removal-rpm-fedora${{ matrix.fedora }}
+          path: dist/*.rpm
+          if-no-files-found: error

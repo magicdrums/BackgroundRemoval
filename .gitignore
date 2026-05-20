@@ -1,5 +1,6 @@
 # --- Build / install ---
 build/
+_deps/
 release/
 install_manifest.txt
 cmake_install.cmake

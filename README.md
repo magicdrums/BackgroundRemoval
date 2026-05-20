@@ -2,7 +2,11 @@
 
 Plugin de filtro para [OBS Studio](https://obsproject.com/) 28+ que quita el fondo de una fuente de vídeo usando segmentación neuronal (modelo MediaPipe vía ONNX Runtime).
 
+**v2:** permite elegir una **imagen de fondo** directamente en el filtro, sin añadir otra fuente en la escena.
+
 Probado con **OBS 32.1.1** instalado desde RPM en Fedora 43.
+
+![CI](https://github.com/vipereir/BackgroundRemoval/actions/workflows/ci.yml/badge.svg)
 
 ## Requisitos
 
@@ -36,10 +40,11 @@ Reinicia OBS después de instalar.
 ## Uso en OBS
 
 1. Añade una fuente de vídeo (cámara, captura, etc.).
-2. Clic derecho en la fuente → **Filtros** → **+** → **Quitar fondo** (o *Background Removal* en inglés).
-3. Ajusta umbral, suavizado y hilos de CPU según tu equipo.
-
-Para fondo transparente, coloca debajo una fuente o escena con transparencia; el filtro deja el canal alpha en la silueta detectada.
+2. Clic derecho en la fuente → **Filtros** → **+** → **Quitar fondo**.
+3. En **Fondo**, elige:
+   - **Transparente** — solo se quita el fondo (alpha en la silueta).
+   - **Imagen personalizada** — selecciona un PNG/JPG/WebP; se estira al tamaño del vídeo.
+4. Ajusta umbral, suavizado y hilos de CPU según tu equipo.
 
 ## Compilación manual
 
@@ -49,6 +54,32 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLINUX_PORTABLE=OFF
 cmake --build build -j$(nproc)
 sudo cmake --install build
 ```
+
+## Pruebas unitarias
+
+```bash
+./scripts/download-model.sh
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build
+export OBS_BGREMOVAL_MODEL_PATH="$PWD/data/models/mediapipe.onnx"
+ctest --test-dir build --output-on-failure
+```
+
+## Empaquetado RPM (Fedora)
+
+```bash
+sudo dnf install rpm-build rpmdevtools obs-studio-devel opencv-devel onnxruntime-devel gtest-devel
+./scripts/build-rpm.sh
+# RPM en ~/rpmbuild/RPMS/x86_64/
+```
+
+## CI (GitHub Actions)
+
+El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en Fedora 43:
+
+1. Compila el plugin
+2. Ejecuta pruebas unitarias (GTest + inferencia ONNX opcional)
+3. Genera el RPM y lo publica como artefacto del workflow
 
 ## Créditos
 
