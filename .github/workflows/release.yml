@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build RPM and publish release
+    runs-on: ubuntu-latest
+
+    container:
+      image: fedora:43
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            git cmake ninja-build gcc-c++ \
+            obs-studio-devel opencv-devel onnxruntime-devel \
+            gtest-devel curl rpm-build rpmdevtools github-cli
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ONNX model
+        run: bash scripts/download-model.sh
+
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DLINUX_PORTABLE=OFF \
+            -DBUILD_TESTING=ON
+          cmake --build build
+
+      - name: Unit tests
+        env:
+          OBS_BGREMOVAL_MODEL_PATH: ${{ github.workspace }}/data/models/mediapipe.onnx
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Build RPM
+        run: |
+          chmod +x scripts/build-rpm.sh
+          ./scripts/build-rpm.sh
+
+      - name: Collect release files
+        run: |
+          mkdir -p dist
+          cp -v "$HOME/rpmbuild/RPMS"/*/*.rpm dist/
+          ls -la dist/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "obs-background-removal ${{ steps.version.outputs.version }}" \
+            --notes-file CHANGELOG.md \
+            dist/*.rpm

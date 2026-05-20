@@ -73,6 +73,31 @@ sudo dnf install rpm-build rpmdevtools obs-studio-devel opencv-devel onnxruntime
 # RPM en ~/rpmbuild/RPMS/x86_64/
 ```
 
+## Releases
+
+Las versiones publicadas están en [GitHub Releases](https://github.com/magicdrums/BackgroundRemoval/releases).
+
+**v2.0.0** incluye el RPM para Fedora 43 (`obs-background-removal-2.0.0-*.rpm`). Tras instalarlo, reinicia OBS y añade el filtro **Quitar fondo** a una fuente de vídeo.
+
+### Crear un release (mantenedores)
+
+Cuando `main` esté estable y el CI en verde:
+
+```bash
+# 1. Etiqueta anotada (versión = CMakeLists.txt → 2.0.0)
+git tag -a v2.0.0 -m "Release 2.0.0"
+git push origin v2.0.0
+```
+
+El workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) compila, ejecuta tests, genera el RPM y publica el release con las notas de [CHANGELOG.md](CHANGELOG.md).
+
+También puedes hacerlo a mano:
+
+```bash
+gh release create v2.0.0 --title "obs-background-removal 2.0.0" --notes-file CHANGELOG.md \
+  ~/rpmbuild/RPMS/x86_64/obs-background-removal-*.rpm
+```
+
 ## CI (GitHub Actions)
 
 El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en Fedora 43:
