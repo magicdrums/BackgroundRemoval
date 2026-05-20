@@ -6,7 +6,7 @@ Plugin de filtro para [OBS Studio](https://obsproject.com/) 28+ que quita el fon
 
 Probado con **OBS 32.1.1** instalado desde RPM en Fedora 43.
 
-![CI](https://github.com/vipereir/BackgroundRemoval/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/magicdrums/BackgroundRemoval/actions/workflows/ci.yml/badge.svg?branch=main)
 
 ## Requisitos
 

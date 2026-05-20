@@ -7,7 +7,7 @@ Release:        1%{?dist}
 Summary:        OBS Studio plugin for AI portrait background removal
 
 License:        GPL-2.0-or-later
-URL:            https://github.com/vipereir/BackgroundRemoval
+URL:            https://github.com/magicdrums/BackgroundRemoval
 
 Source0:        %{name}-%{version}.tar.gz
 
