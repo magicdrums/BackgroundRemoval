@@ -11,7 +11,6 @@ URL:            https://github.com/vipereir/BackgroundRemoval
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.16
-BuildRequires:  cmake-rpm-macros
 BuildRequires:  ninja-build
 BuildRequires:  gcc-c++
 BuildRequires:  obs-studio-devel
@@ -34,19 +33,19 @@ mkdir -p data/models
 curl -fsSL -o data/models/mediapipe.onnx %{model_url}
 
 %build
-%cmake -B build -G Ninja \
+cmake -S . -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
     -DLINUX_PORTABLE=OFF \
     -DBUILD_TESTING=ON
-%cmake_build
+cmake --build build --parallel %{?_smp_build_ncpus}
 
 %check
 export OBS_BGREMOVAL_MODEL_PATH=%{builddir}/data/models/mediapipe.onnx
 ctest --test-dir build --output-on-failure
 
 %install
-%cmake_install
+DESTDIR=%{buildroot} cmake --install build
 
 %files
 %license LICENSE

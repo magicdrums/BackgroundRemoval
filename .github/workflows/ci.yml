@@ -24,7 +24,7 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False \
             git cmake ninja-build gcc-c++ \
             obs-studio-devel opencv-devel onnxruntime-devel \
-            gtest-devel curl rpm-build rpmdevtools cmake-rpm-macros
+            gtest-devel curl rpm-build rpmdevtools
 
       - name: Checkout
         uses: actions/checkout@v4
