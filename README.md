@@ -85,6 +85,12 @@ El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en Fedora 43:
 
 Basado en la arquitectura del plugin [obs-backgroundremoval](https://github.com/obs-backgroundremoval/obs-backgroundremoval) (GPL-2.0). Modelo MediaPipe de su distribución de releases.
 
+Parte del código y la documentación de este repositorio se desarrolló con ayuda de **Cursor Agent** (asistente IA). Si quieres reflejarlo en GitHub, puedes añadir al final del mensaje de commit (tras una línea en blanco):
+
+```
+Co-authored-by: Cursor <cursoragent@cursor.com>
+```
+
 ## Licencia
 
 GPL-2.0 — ver [LICENSE](LICENSE).
