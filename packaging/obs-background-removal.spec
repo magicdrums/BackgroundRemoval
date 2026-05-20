@@ -31,8 +31,10 @@ MediaPipe (ONNX Runtime). Incluye soporte para imagen de fondo personalizada.
 %autosetup -n BackgroundRemoval-%{version} -p1
 mkdir -p data/models
 curl -fsSL -o data/models/mediapipe.onnx %{model_url}
+test -s data/models/mediapipe.onnx
 
 %build
+cd BackgroundRemoval-%{version}
 cmake -S . -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
@@ -41,10 +43,12 @@ cmake -S . -B build -G Ninja \
 cmake --build build --parallel %{?_smp_build_ncpus}
 
 %check
-export OBS_BGREMOVAL_MODEL_PATH=%{builddir}/data/models/mediapipe.onnx
+cd BackgroundRemoval-%{version}
+export OBS_BGREMOVAL_MODEL_PATH="$PWD/data/models/mediapipe.onnx"
 ctest --test-dir build --output-on-failure
 
 %install
+cd BackgroundRemoval-%{version}
 DESTDIR=%{buildroot} cmake --install build
 
 %files
