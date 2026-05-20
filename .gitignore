@@ -50,11 +50,11 @@ scripts/inspect-model
 Thumbs.db
 desktop.ini
 
-# --- Logs y cores ---
+# --- Logs y volcados de memoria (solo en la raíz del repo) ---
 *.log
-core
-core.*
-vgcore.*
+/core
+/core.*
+/vgcore.*
 
 # --- Misc ---
 _upstream/
