@@ -1,4 +1,5 @@
 %global model_url https://raw.githubusercontent.com/obs-backgroundremoval/obs-backgroundremoval/main/data/models/mediapipe.onnx
+%global srcroot %{builddir}/BackgroundRemoval-%{version}
 
 Name:           obs-background-removal
 Version:        2.0.0
@@ -34,7 +35,7 @@ curl -fsSL -o data/models/mediapipe.onnx %{model_url}
 test -s data/models/mediapipe.onnx
 
 %build
-cd BackgroundRemoval-%{version}
+cd %{srcroot}
 cmake -S . -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
@@ -43,12 +44,12 @@ cmake -S . -B build -G Ninja \
 cmake --build build --parallel %{?_smp_build_ncpus}
 
 %check
-cd BackgroundRemoval-%{version}
-export OBS_BGREMOVAL_MODEL_PATH="$PWD/data/models/mediapipe.onnx"
+cd %{srcroot}
+export OBS_BGREMOVAL_MODEL_PATH="%{srcroot}/data/models/mediapipe.onnx"
 ctest --test-dir build --output-on-failure
 
 %install
-cd BackgroundRemoval-%{version}
+cd %{srcroot}
 DESTDIR=%{buildroot} cmake --install build
 
 %files
